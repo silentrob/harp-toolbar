@@ -37,7 +37,7 @@
 	</array>
 	
 	<key>CFBundleExecutable</key>
-	<string>Harp Toolbar</string>
+	<string>node-webkit</string>
 	<key>CFBundleIconFile</key>
 	<string>app.icns</string>
 	<key>CFBundleIdentifier</key>
