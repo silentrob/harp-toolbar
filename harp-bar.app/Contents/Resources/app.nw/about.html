@@ -1,0 +1,57 @@
+<html>
+  <head>
+    <style>
+    body {
+      margin:0px;
+      padding:0px;
+      font-family: "Open Sans",Tahoma,Verdana,Segoe,sans-serif
+    }
+    h1 {
+      font-size:20px;
+    }
+    p {
+      font-size:12px;
+    }
+    .version {
+      font-size:10px;
+      margin-top:-12px;
+    }
+    .top {
+      min-height: 50px;
+      padding:10px;
+      margin:0px;
+      background-color: #fff;
+    }
+    .bot {
+      min-height: 100px;
+      padding:10px;
+      margin:0px;
+      background-color: #efefef;
+      border-top:1px solid #ccc;
+    }
+    </style>
+    <script type="text/javascript">
+      var hc  = require('./harpcheck')();
+      onload = function() {
+        setTimeout(function(){
+          hc.getLocalHarpVersion(function(er, v){
+            var el = document.getElementById("js_version");  
+            el.innerHTML = "Version " + v;
+          });
+
+        }, 1000);
+      }
+
+    </script>
+  </head>
+  <body>
+    <div class="top">
+      <h1>Harp server</h1>
+      <div id="js_version" class="version"></div>
+    </div>
+    <div class="bot">
+      <p>Copyright &copy; 2014 Chloi Inc. All Rights Reserved</p>
+    </div>
+
+  </body>
+</html>

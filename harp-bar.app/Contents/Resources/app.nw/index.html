@@ -1,0 +1,212 @@
+<html>
+<head>
+  <script src="lzadialog.min.js"></script>
+</head>
+<body>
+  <script>
+    // Load library
+    var gui           = require('nw.gui');
+    var hc            = require('./harpcheck')();
+    var np            = require('path');
+    var portfinder    = require('portfinder');
+    var exec          = require('child_process').exec;
+    var child;
+    
+    // Reference to window and tray
+    var win = gui.Window.get();
+    var tray, menu;
+    var localServerMenuItem, openProjectMenuItem;
+
+    var defaultAppPath = '/Users/robellis/Dropbox/harp.io/apps/silentrob.harp.io'
+    var harpPath = np.resolve(process.cwd(), "node_modules", "harp", "bin", "harp");
+
+    var HARP_START_LABEL = "Start Harp Server";
+    var HARP_STOP_LABEL = "Stop Harp Server";
+    var serverRunning = false;
+    var gPort = "9000";
+    portfinder.basePort = +gPort;
+
+
+    var startHarp = function(cb) {
+
+      portfinder.getPort(function (err, port) {
+        gPort = port;
+
+        // This is going to change in Harp 0.11.2
+        // var harp = require("harp");
+        // harp.server(defaultAppPath, { port: port });
+        var runPath = harpPath + " server -p " + gPort + " " + defaultAppPath
+        child = exec(runPath, function(error, stdout, stderr) {
+          alert(error, stdout, stderr)
+        }); 
+
+        child.on('exit', function (code) { 
+          serverRunning = false;
+        });
+
+        serverRunning = true;
+        cb();
+      });
+    }
+
+    var stopHarp = function(cb) {
+
+      child.kill();
+      serverRunning = false;
+      cb();
+
+      // harp.close();
+      // serverRunning = false;
+      // cb();
+
+    }
+
+
+    var toggleHarp = function(e) {
+
+      var that = this;
+      if (serverRunning === false) {
+        chooseFolder(function() {
+          that.label = HARP_STOP_LABEL;
+          startHarp(function(){
+
+            localServerMenuItem.enabled = true;
+            openProjectMenuItem.enabled = true;
+
+            window.setTimeout(function() {
+              openLocal();
+            }, 1000);
+          });
+        });
+
+      } else {
+        this.label = HARP_START_LABEL;
+        localServerMenuItem.enabled = false;
+        stopHarp(function(){});
+      }
+    }
+
+    var closeApp = function(e) {
+      gui.App.quit();
+      stopHarp();
+    }
+
+    // This does not kill the app nice try
+    win.on('close', function() {
+      this.hide();
+    });
+  
+    var versionCheck = function(e) {
+      hc.upgradeRequred(function(e, needsUpdate){
+        if (needsUpdate) {
+          if (confirm("There is a newer version of Harp, update now?")) {
+            hc.installHarp(function(err, data){
+              alert("Update complete.");
+            });
+          }
+        } else {
+          alert("Harp is up to date.");
+        }
+      });
+    }
+
+    var openProject = function() {
+      gui.Shell.showItemInFolder(defaultAppPath);
+    }
+
+    var openLocal = function() {
+      gui.Shell.openExternal("http://localhost:" + gPort);
+    }
+
+    var openDocs = function() {
+      gui.Shell.openExternal("http://harpjs.com/docs");
+    }
+
+    var openAbout = function() {
+      window.open('about.html', '_blank', 'toolbar=false,title=test,screenX=100,screenY=100,width=400,height=150');
+    }
+
+    var restartApp = function() {
+      alert("Updating finished, restarting...");
+
+      var child_process = require('child_process');
+      
+      var restartApp2 = function(waitSecs) {
+        
+        var child = child_process.spawn(np.join(process.cwd(), "relaunch_app.bat"), 
+          [waitSecs.toString(), (process.platform == "darwin") ? process.cwd().match(/^([^\0]+?\.app)\//)[1] : process.execPath], {detached: true});
+        child.unref();
+        closeApp();
+
+      }
+
+      restartApp2(2)
+    }
+
+    var windowInit = function() {
+
+      var postInit = function() {
+        tray = new gui.Tray({ icon: 'icons/18x18.png', alticon: 'icons/18x18-white.png'});
+
+        // Give it a menu
+        menu = new gui.Menu();
+        menu.append(new gui.MenuItem({ label: HARP_START_LABEL, click: toggleHarp }));
+        
+        openProjectMenuItem = new gui.MenuItem({ label: 'Open project folder', click: openProject });
+
+        menu.append(openProjectMenuItem);
+        openProjectMenuItem.enabled = false;
+        
+        localServerMenuItem = new gui.MenuItem({ label: 'Visit local server on the web', click: openLocal});
+        localServerMenuItem.enabled = false;
+
+        menu.append(localServerMenuItem);
+        
+        
+        menu.append(new gui.MenuItem({ type:  'separator' }));
+        // menu.append(new gui.MenuItem({ label: 'Preferences...', enabled: false}));
+        menu.append(new gui.MenuItem({ label: 'Help', click: openDocs }));
+        menu.append(new gui.MenuItem({ label: 'About', click: openAbout }));
+        
+        menu.append(new gui.MenuItem({ type:  'separator' }));
+        menu.append(new gui.MenuItem({ label: 'Check for Updates...', click: versionCheck }));
+        // menu.append(new gui.MenuItem({ label: 'Restart Test', click: restartApp }));
+        menu.append(new gui.MenuItem({ type:  'separator' }));
+        menu.append(new gui.MenuItem({ label: 'Quit Harp Server', click: closeApp }));
+        tray.menu = menu;   
+      }
+
+      hc.getLocalHarpVersion(function(err, hv){
+        if (hv === false) {
+          alert("This appears to be the first time starting Harp, one moment while we update it");
+          hc.installHarp(function(err, data){
+            // Reload this module
+            restartApp();
+            postInit();
+          });
+        } else {
+          postInit();
+        }
+      });
+   
+    }
+
+    function chooseFolder(cb) {
+
+      win.show();
+      win.blur();
+      setTimeout(win.focus, 0);
+
+      LZADialog.selectDir(function(file){
+        defaultAppPath = file.path;
+        win.hide();
+        cb();
+      });
+    }
+
+    // Start the App
+    windowInit();
+  </script>
+  
+</body>
+</html>
