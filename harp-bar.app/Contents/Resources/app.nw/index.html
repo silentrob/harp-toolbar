@@ -137,11 +137,31 @@
           [waitSecs.toString(), (process.platform == "darwin") ? process.cwd().match(/^([^\0]+?\.app)\//)[1] : process.execPath], {detached: true});
         child.unref();
         closeApp();
+      }
+      restartApp2(2);
+    }
 
+
+    var nIntervId;
+          
+    var imgPos = 1;
+    function changeIcon() {
+      tray.icon = 'loader/f' + imgPos + '.png';
+      imgPos++;
+
+      if (imgPos == 9) imgPos = 1;
+    }
+
+    var startThrobber = function(createTray) {
+      if (createTray) {
+        tray = new gui.Tray({ icon: 'loader/f1.png'});
+        imgPos = 2;
       }
 
-      restartApp2(2)
+      nIntervId = setInterval(changeIcon, 100);
     }
+
+
 
     var windowInit = function() {
 
@@ -179,10 +199,10 @@
       hc.getLocalHarpVersion(function(err, hv){
         if (hv === false) {
           alert("This appears to be the first time starting Harp, one moment while we update it");
+          startThrobber(true);
           hc.installHarp(function(err, data){
-            // Reload this module
+            
             restartApp();
-            postInit();
           });
         } else {
           postInit();
