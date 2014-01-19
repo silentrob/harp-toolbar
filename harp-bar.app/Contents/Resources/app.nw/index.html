@@ -37,7 +37,7 @@
         // harp.server(defaultAppPath, { port: port });
         var runPath = harpPath + " server -p " + gPort + " " + defaultAppPath
         child = exec(runPath, function(error, stdout, stderr) {
-          alert(error, stdout, stderr)
+          // alert(error, stdout, stderr)
         }); 
 
         child.on('exit', function (code) { 
@@ -54,11 +54,6 @@
       child.kill();
       serverRunning = false;
       cb();
-
-      // harp.close();
-      // serverRunning = false;
-      // cb();
-
     }
 
 
