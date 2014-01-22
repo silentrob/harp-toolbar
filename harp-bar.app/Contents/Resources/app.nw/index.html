@@ -17,7 +17,7 @@
     var tray, menu;
     var localServerMenuItem, openProjectMenuItem;
 
-    var defaultAppPath = '/Users/robellis/Dropbox/harp.io/apps/silentrob.harp.io'
+    var defaultAppPath = '~/sites'
     var harpPath = np.resolve(process.cwd(), "node_modules", "harp", "bin", "harp");
 
     var HARP_START_LABEL = "Start Harp Server";
@@ -32,12 +32,8 @@
       portfinder.getPort(function (err, port) {
         gPort = port;
 
-        // This is going to change in Harp 0.11.2
-        // var harp = require("harp");
-        // harp.server(defaultAppPath, { port: port });
-        var runPath = harpPath + " server -p " + gPort + " " + defaultAppPath
+        var runPath = "/usr/local/bin/node " + harpPath + " server -p " + gPort + " " + defaultAppPath
         child = exec(runPath, function(error, stdout, stderr) {
-          // alert(error, stdout, stderr)
         }); 
 
         child.on('exit', function (code) { 
@@ -50,7 +46,6 @@
     }
 
     var stopHarp = function(cb) {
-
       child.kill();
       serverRunning = false;
       cb();
@@ -86,7 +81,6 @@
       stopHarp();
     }
 
-    // This does not kill the app nice try
     win.on('close', function() {
       this.hide();
     });
